@@ -561,6 +561,7 @@ MonoBehaviour:
   skirt: {fileID: 1276446800}
   rotationclustersize: 170
   distanceclustersize: 2.5
+  layercluster: 3
 --- !u!1 &1964171466
 GameObject:
   m_ObjectHideFlags: 0

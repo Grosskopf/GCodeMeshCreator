@@ -13,7 +13,8 @@ public class meshcreator : MonoBehaviour
     public Transform fill;
     public Transform skirt;
     public float rotationclustersize=10.0f;
-    public float distanceclustersize=10.0f;
+    public float distanceclustersize = 10.0f;
+    public int layercluster = 1;
     void Start()
     {
 
@@ -54,12 +55,12 @@ public class meshcreator : MonoBehaviour
                     Vector3 dvt = dv; dvt.x = dv.z; dvt.z = -dv.x;
                     newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f + dvt.normalized * 0.5f);
                     newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f - dvt.normalized * 0.5f);
-                    newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f - dvt.normalized * 0.5f - new Vector3(0, -0.5f, 0));
-                    newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f + dvt.normalized * 0.5f - new Vector3(0, -0.5f, 0));
+                    newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f - dvt.normalized * 0.5f - new Vector3(0, -0.25f, 0)*layercluster);
+                    newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f + dvt.normalized * 0.5f - new Vector3(0, -0.25f, 0) * layercluster);
                     newVertices[currentmesh].Add(tmpmove[0] + dvt.normalized * 0.6f);
                     newVertices[currentmesh].Add(tmpmove[0] - dvt.normalized * 0.6f);
-                    newVertices[currentmesh].Add(tmpmove[0] - dvt.normalized * 0.6f - new Vector3(0, -0.5f, 0));
-                    newVertices[currentmesh].Add(tmpmove[0] + dvt.normalized * 0.6f - new Vector3(0, -0.5f, 0));
+                    newVertices[currentmesh].Add(tmpmove[0] - dvt.normalized * 0.6f - new Vector3(0, -0.25f, 0) * layercluster);
+                    newVertices[currentmesh].Add(tmpmove[0] + dvt.normalized * 0.6f - new Vector3(0, -0.25f, 0) * layercluster);
                     newUV[currentmesh].Add(new Vector2(0.0f, 0.0f));
                     newUV[currentmesh].Add(new Vector2(0.0f, 1.0f));
                     newUV[currentmesh].Add(new Vector2(1.0f, 1.0f));
@@ -113,8 +114,8 @@ public class meshcreator : MonoBehaviour
                         dvt = (dvt1 + dvt2).normalized * -0.6f;
                         newVertices[currentmesh].Add(tmpmove[i] + dvt);
                         newVertices[currentmesh].Add(tmpmove[i] - dvt);
-                        newVertices[currentmesh].Add(tmpmove[i] - dvt - new Vector3(0, -0.5f, 0));
-                        newVertices[currentmesh].Add(tmpmove[i] + dvt - new Vector3(0, -0.5f, 0));
+                        newVertices[currentmesh].Add(tmpmove[i] - dvt - new Vector3(0, -0.25f, 0) * layercluster);
+                        newVertices[currentmesh].Add(tmpmove[i] + dvt - new Vector3(0, -0.25f, 0) * layercluster);
                         newUV[currentmesh].Add(new Vector2(0.0f, 0.0f));
                         newUV[currentmesh].Add(new Vector2(0.0f, 1.0f));
                         newUV[currentmesh].Add(new Vector2(1.0f, 1.0f));
@@ -157,12 +158,12 @@ public class meshcreator : MonoBehaviour
 
                     newVertices[currentmesh].Add(tmpmove[maxi] + dv + dvt);
                     newVertices[currentmesh].Add(tmpmove[maxi] + dv - dvt);
-                    newVertices[currentmesh].Add(tmpmove[maxi] + dv - dvt - new Vector3(0, -0.5f, 0));
-                    newVertices[currentmesh].Add(tmpmove[maxi] + dv + dvt - new Vector3(0, -0.5f, 0));
+                    newVertices[currentmesh].Add(tmpmove[maxi] + dv - dvt - new Vector3(0, -0.25f, 0) * layercluster);
+                    newVertices[currentmesh].Add(tmpmove[maxi] + dv + dvt - new Vector3(0, -0.25f, 0) * layercluster);
                     newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f + dvt.normalized * 0.5f);
                     newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f - dvt.normalized * 0.5f);
-                    newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f - dvt.normalized * 0.5f - new Vector3(0, -0.5f, 0));
-                    newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f + dvt.normalized * 0.5f - new Vector3(0, -0.5f, 0));
+                    newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f - dvt.normalized * 0.5f - new Vector3(0, -0.25f, 0) * layercluster);
+                    newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f + dvt.normalized * 0.5f - new Vector3(0, -0.25f, 0) * layercluster);
                     newUV[currentmesh].Add(new Vector2(0.0f, 0.0f));
                     newUV[currentmesh].Add(new Vector2(0.0f, 1.0f));
                     newUV[currentmesh].Add(new Vector2(1.0f, 1.0f));
@@ -258,7 +259,7 @@ public class meshcreator : MonoBehaviour
             else if (line.StartsWith(";LAYER:")) {
                 layernum = int.Parse(line.Substring(7));
             }
-            else if ((line.StartsWith("G1") || line.StartsWith("G0")) && currentmesh != -1)
+            else if ((line.StartsWith("G1") || line.StartsWith("G0")) && currentmesh != -1 &&(layernum%layercluster)==0)
             {
                 //here i add a point to the list of visited points of the current part
                 //print("Adding object");
@@ -315,12 +316,12 @@ public class meshcreator : MonoBehaviour
                                 dvt = -dvt.normalized;
                                 newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f + dvt * 0.5f);
                                 newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f - dvt * 0.5f);
-                                newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f - dvt * 0.5f - new Vector3(0, -0.25f, 0));
-                                newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f + dvt * 0.5f - new Vector3(0, -0.25f, 0));
+                                newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f - dvt * 0.5f - new Vector3(0, -0.25f, 0)*layercluster);
+                                newVertices[currentmesh].Add(tmpmove[0] - dv.normalized * 0.5f + dvt * 0.5f - new Vector3(0, -0.25f, 0) * layercluster);
                                 newVertices[currentmesh].Add(tmpmove[0] + dvt * 0.6f);
                                 newVertices[currentmesh].Add(tmpmove[0] - dvt * 0.6f);
-                                newVertices[currentmesh].Add(tmpmove[0] - dvt * 0.6f - new Vector3(0, -0.25f, 0));
-                                newVertices[currentmesh].Add(tmpmove[0] + dvt * 0.6f - new Vector3(0, -0.25f, 0));
+                                newVertices[currentmesh].Add(tmpmove[0] - dvt * 0.6f - new Vector3(0, -0.25f, 0) * layercluster);
+                                newVertices[currentmesh].Add(tmpmove[0] + dvt * 0.6f - new Vector3(0, -0.25f, 0) * layercluster);
                                 newUV[currentmesh].Add(new Vector2(0.0f, 0.0f));
                                 newUV[currentmesh].Add(new Vector2(0.0f, 1.0f));
                                 newUV[currentmesh].Add(new Vector2(1.0f, 1.0f));
@@ -374,8 +375,8 @@ public class meshcreator : MonoBehaviour
                                     dvt = (dvt1 + dvt2).normalized * -0.6f;
                                     newVertices[currentmesh].Add(tmpmove[i] + dvt);
                                     newVertices[currentmesh].Add(tmpmove[i] - dvt);
-                                    newVertices[currentmesh].Add(tmpmove[i] - dvt - new Vector3(0, -0.25f, 0));
-                                    newVertices[currentmesh].Add(tmpmove[i] + dvt - new Vector3(0, -0.25f, 0));
+                                    newVertices[currentmesh].Add(tmpmove[i] - dvt - new Vector3(0, -0.25f, 0) * layercluster);
+                                    newVertices[currentmesh].Add(tmpmove[i] + dvt - new Vector3(0, -0.25f, 0) * layercluster);
                                     newUV[currentmesh].Add(new Vector2(0.0f, 0.0f));
                                     newUV[currentmesh].Add(new Vector2(0.0f, 1.0f));
                                     newUV[currentmesh].Add(new Vector2(1.0f, 1.0f));
@@ -417,12 +418,12 @@ public class meshcreator : MonoBehaviour
 
                                 newVertices[currentmesh].Add(tmpmove[maxi] + dv + dvt);
                                 newVertices[currentmesh].Add(tmpmove[maxi] + dv - dvt);
-                                newVertices[currentmesh].Add(tmpmove[maxi] + dv - dvt - new Vector3(0, -0.25f, 0));
-                                newVertices[currentmesh].Add(tmpmove[maxi] + dv + dvt - new Vector3(0, -0.25f, 0));
+                                newVertices[currentmesh].Add(tmpmove[maxi] + dv - dvt - new Vector3(0, -0.25f, 0) * layercluster);
+                                newVertices[currentmesh].Add(tmpmove[maxi] + dv + dvt - new Vector3(0, -0.25f, 0) * layercluster);
                                 newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f + dvt * 0.8f);
                                 newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f - dvt * 0.8f);
-                                newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f - dvt * 0.8f - new Vector3(0, -0.25f, 0));
-                                newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f + dvt * 0.8f - new Vector3(0, -0.25f, 0));
+                                newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f - dvt * 0.8f - new Vector3(0, -0.25f, 0) * layercluster);
+                                newVertices[currentmesh].Add(tmpmove[maxi] + dv.normalized * 0.5f + dvt * 0.8f - new Vector3(0, -0.25f, 0) * layercluster);
                                 newUV[currentmesh].Add(new Vector2(0.0f, 0.0f));
                                 newUV[currentmesh].Add(new Vector2(0.0f, 1.0f));
                                 newUV[currentmesh].Add(new Vector2(1.0f, 1.0f));
