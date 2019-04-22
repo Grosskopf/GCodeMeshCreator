@@ -6,23 +6,33 @@ using System.Globalization;
 
 public class meshcreator : MonoBehaviour
 {
-    public GameObject cube;
-    public Transform skin;
-    public Transform wallouter;
-    public Transform wallinner;
-    public Transform fill;
-    public Transform skirt;
+    public string path = "Assets/gcode/gcode.gcode";
     public float rotationclustersize=10.0f;
     public float distanceclustersize = 10.0f;
     public int layercluster = 1;
+    public int layersvisible = 0;
+    private int _layersvisible = 0;
+    private Dictionary<string,Dictionary<int,GameObject>> layersobj =new Dictionary<string,Dictionary<int,GameObject>>();
+    private Dictionary<string,GameObject> parrentobjects =new Dictionary<string, GameObject>();
     void Start()
     {
-
-        string path = "Assets/gcode/gcode.gcode";
+            recreate(path);
+    }
+    void clearchildren()//call this before you recreate to regenerate with new clustersizes ^^
+    {
+        foreach (KeyValuePair<string, GameObject> parentobj in parrentobjects)
+        {
+            Destroy(parentobj.Value);
+        }
+        layersobj.Clear();
+        parrentobjects.Clear();
+    }
+    void recreate(string filename)//takes ages and munches on all that juicy cpu, only use if absolutely necessary
+    {
         //Read the text from directly from the test.txt file
-        StreamReader reader = new StreamReader(path);
-        List<string> meshnames=new List<string>();
-        int currentmesh=-1;
+        StreamReader reader = new StreamReader(filename);
+        List<string> meshnames = new List<string>();
+        int currentmesh = -1;
         List<List<Vector3>> newVertices = new List<List<Vector3>>();
         List<List<Vector3>> newNormals = new List<List<Vector3>>();
         List<List<Vector2>> newUV = new List<List<Vector2>>();
@@ -32,10 +42,9 @@ public class meshcreator : MonoBehaviour
         int linesread = 0;
         int layernum = 0;
         float accumulateddist = 0.0f;
-        Vector3 lastpointcache =new Vector3(0,0,0);
+        Vector3 lastpointcache = new Vector3(0, 0, 0);
         bool accumulating = false;
-        bool oldpart = false;
-        float lastanglecache =0.0f;
+        float lastanglecache = 0.0f;
         float accumulatedangle = 0.0f;
         bool ismesh = false;
         while (!reader.EndOfStream)
@@ -44,14 +53,13 @@ public class meshcreator : MonoBehaviour
             string line = reader.ReadLine();
             if (line.StartsWith(";TYPE:"))
             {
-                oldpart = false;
 
                 ismesh = true;
                 //here i change the type of 3d printed part i print next, this only works in cura-sliced stuff, slic3r doesnt have those comments
                 //print("setting type");
-                if (!meshnames.Contains(line.Substring(6) + layernum))
+                if (!meshnames.Contains(line.Substring(6) + " " + layernum))
                 {
-                    meshnames.Add(line.Substring(6) + layernum);
+                    meshnames.Add(line.Substring(6) + " " + layernum);
                     currentmesh = meshnames.Count - 1;
                     newVertices.Add(new List<Vector3>());
                     newNormals.Add(new List<Vector3>());
@@ -61,15 +69,16 @@ public class meshcreator : MonoBehaviour
                 }
                 else
                 {
-                    currentmesh = meshnames.FindIndex((line.Substring(6) + layernum).EndsWith);
+                    currentmesh = meshnames.FindIndex((line.Substring(6) + " " + layernum).EndsWith);
                     //print("changed mesh to: " + currentmesh + " because of " + line);
                 }
                 //print("currentmesh" + currentmesh);
             }
-            else if (line.StartsWith(";LAYER:")) {
+            else if (line.StartsWith(";LAYER:"))
+            {
                 layernum = int.Parse(line.Substring(7));
             }
-            else if ((line.StartsWith("G1") || line.StartsWith("G0")) && currentmesh != -1 &&((layernum%layercluster)==0||layercluster==1))
+            else if ((line.StartsWith("G1") || line.StartsWith("G0")) /*&& currentmesh != -1*/ && ((layernum % layercluster) == 0 || layercluster == 1))
             {
                 //here i add a point to the list of visited points of the current part
                 //print("Adding object");
@@ -82,7 +91,7 @@ public class meshcreator : MonoBehaviour
                 }
                 lastpointcache = currpos;
                 lastanglecache = Vector2.Angle(new Vector2(1, 0), new Vector2((currpos - lastpointcache).x, (currpos - lastpointcache).z));
-                if (! accumulating && line.Contains("E"))
+                if (!accumulating && line.Contains("E") && currpos != new Vector3(0, 0, 0))
                 {
                     tmpmove.Add(currpos);
                 }
@@ -101,7 +110,7 @@ public class meshcreator : MonoBehaviour
                         currpos.y = float.Parse(part.Substring(1), CultureInfo.InvariantCulture.NumberFormat);
                     }
                 }
-                if ((!accumulating || accumulateddist > distanceclustersize || accumulatedangle > rotationclustersize) && (ismesh||line.Contains("E")))
+                if (((!accumulating || accumulateddist > distanceclustersize || accumulatedangle > rotationclustersize) && (ismesh || line.Contains("E"))) && currpos != new Vector3(0, 0, 0))
                 {
                     tmpmove.Add(currpos);
 
@@ -116,11 +125,9 @@ public class meshcreator : MonoBehaviour
                 else
                 {
                     ismesh = false;
-
-                    if (tmpmove.Count > 1)
+                    accumulating = false;
+                    if (tmpmove.Count > 1 && currentmesh != -1)
                     {
-                        //tmpmove.Add(currpos);
-                        accumulating = false;
                         accumulateddist = 0.0f;
                         accumulatedangle = 0.0f;
                         //here i generate the mesh from the tmpmove list, wich is a list of points the extruder goes to
@@ -332,73 +339,41 @@ public class meshcreator : MonoBehaviour
                     }
                     tmpmove.Clear();
                 }
-                //tmpmove.Add(currpos);
-                //print(currpos);
             }
             else if (line.StartsWith(";MESH:"))
             {
-                ismesh = false;//!line.Contains("NONMESH");
-                /*if (!line.Contains("NONMESH"))
-                {
-                    tmpmove.Clear();
-                }*/
+                ismesh = false;
             }
-            // Do Something with the input. 
         }
+        layersvisible = layernum;
+        _layersvisible = layernum;
         reader.Close();
-        //print("read lines: " + linesread);
-        for (int i=0; i < meshnames.Count; i++)
+        for (int i = 0; i < meshnames.Count; i++)
         {
             Mesh mesh = new Mesh();
-            GameObject part = Instantiate(cube);
+            GameObject part = new GameObject(meshnames[i]);
+            part.AddComponent(typeof(MeshFilter));
+            part.AddComponent(typeof(MeshRenderer));
+            part.GetComponent<MeshRenderer>().material = GetComponent<MeshRenderer>().material;
             part.transform.position = this.transform.position;
             part.transform.localScale = this.transform.localScale;
             part.name = meshnames[i];
             part.GetComponent<MeshFilter>().mesh = mesh;
-            if (meshnames[i].StartsWith("SKIN")){
-                part.transform.SetParent(skin);
-            }
-            else if (meshnames[i].StartsWith("WALL-OUTER"))
+            string meshparentname = meshnames[i].Split(' ')[0];
+            if (parrentobjects.ContainsKey(meshparentname))
             {
-                part.transform.SetParent(wallouter);
+                part.transform.SetParent(parrentobjects[meshparentname].transform);
+                layersobj[meshparentname].Add(int.Parse(meshnames[i].Split(' ')[1]), part);
             }
-            else if (meshnames[i].StartsWith("WALL-INNER"))
+            else
             {
-                part.transform.SetParent(wallinner);
+                GameObject parrentobj = new GameObject(meshparentname);
+                parrentobjects.Add(meshparentname, parrentobj);
+                part.transform.SetParent(parrentobjects[meshparentname].transform);
+                layersobj.Add(meshparentname, new Dictionary<int, GameObject>());
+                layersobj[meshparentname].Add(int.Parse(meshnames[i].Split(' ')[1]), part);
+                parrentobj.transform.SetParent(transform);
             }
-            else if (meshnames[i].StartsWith("FILL"))
-            {
-                part.transform.SetParent(fill);
-            }
-            else if (meshnames[i].StartsWith("SKIRT"))
-            {
-                part.transform.SetParent(skirt);
-            }
-            switch (meshnames[i])
-            {
-                case "SKIN":
-                    part.transform.SetParent(skin);
-                    break;
-                case "WALL-OUTER":
-                    part.transform.SetParent(wallouter);
-                    break;
-                case "WALL-INNER":
-                    part.transform.SetParent(wallinner);
-                    break;
-                case "FILL":
-                    part.transform.SetParent(fill);
-                    break;
-                case "SKIRT":
-                    part.transform.SetParent(skirt);
-                    break;
-            }
-            /*print("trianglecount: ");
-            print(newTriangles[i].Count);
-            //print("lasttrianglepoint: ");
-            //print(newTriangles[i][newTriangles[i].Count - 1]);
-            print("vertexcount: ");
-            print(newVertices[i].Count);*/
-            //printbounding(newVertices[i].ToArray());
             mesh.vertices = newVertices[i].ToArray();
             mesh.normals = newNormals[i].ToArray();
             mesh.uv = newUV[i].ToArray();
@@ -442,6 +417,27 @@ public class meshcreator : MonoBehaviour
         }
         print("min :" + minx + "/" + miny + "/" + minz);
         print("max :" + maxx + "/" + maxy + "/" + maxz);
+    }
+    public void Update()
+    {
+        if (layersvisible != _layersvisible)
+        {
+            _layersvisible = layersvisible;
+            foreach(KeyValuePair<string,Dictionary<int,GameObject>> parentobj in layersobj)
+            {
+                foreach(KeyValuePair<int,GameObject> layer in parentobj.Value)
+                {
+                    if (layer.Key > layersvisible)
+                    {
+                        layer.Value.SetActive(false);
+                    }
+                    else
+                    {
+                        layer.Value.SetActive(true);
+                    }
+                }
+            }
+        }
     }
 
 }
